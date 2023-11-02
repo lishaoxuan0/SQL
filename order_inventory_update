@@ -1,0 +1,48 @@
+GO
+-- Create or alter an existing procedure named 'inventory_update'
+CREATE OR ALTER PROC inventory_update
+    @product_id INT, -- Parameter for the ID of the product to update
+    @order_quantity INT -- Parameter for the quantity of the product being ordered
+
+AS
+BEGIN
+    -- Variable to hold current inventory quantity
+    DECLARE @current_inventory INT
+
+    -- Retrieve the current quantity in stock for the given product ID
+    SELECT @current_inventory = quantity_in_stock
+    FROM inventory
+    WHERE Product_Id = @product_id
+
+    -- Check if inventory is empty
+    IF @current_inventory < 1
+        PRINT 'No Inventory, order not placed.'
+    
+    -- Check if there is insufficient stock for the order
+    ELSE IF @current_inventory < @order_quantity
+        PRINT 'Not enough inventory for order. ' +
+              'Order requires: ' + CAST(@order_quantity AS VARCHAR(10)) + 
+              ', quantity in stock: ' + CAST(@current_inventory AS VARCHAR(10))
+    -- If inventory is sufficient, proceed with order and update inventory
+    ELSE
+        BEGIN
+            -- Insert order details into 'order_details_test' table
+            INSERT INTO order_details_test VALUES (@product_id, @order_quantity)
+
+            -- Update the inventory by subtracting the ordered quantity
+            UPDATE inventory
+            SET quantity_in_stock = quantity_in_stock - @order_quantity
+            WHERE product_id = @product_id
+
+            -- Display the updated order details and inventory information
+            SELECT * FROM order_details_test
+            SELECT * FROM inventory
+        END
+
+    -- Check for low inventory after the operation
+    IF @current_inventory <= 3
+        PRINT 'Low Inventory - less than 3 items remaining'
+END
+
+-- Execute the 'inventory_update' stored procedure with specified parameters
+EXEC inventory_update 2015, 3
